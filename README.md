@@ -1,3 +1,3 @@
 # Meeting Insights
 
-sends notifications with details of meetings
+Generate airtime insights of meetings and notify on slack

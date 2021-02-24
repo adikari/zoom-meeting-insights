@@ -1,0 +1,31 @@
+{
+  "name": "meeting-insights",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "sls offline start",
+    "deploy": "./bin/deploy",
+    "lint": "eslint ./src",
+    "lint:fix": "eslint --fix ./src",
+    "test": "jest --coverage",
+    "test:ci": "jest --coverage --silent --logHeapUsage --detectOpenHandles"
+  },
+  "devDependencies": {
+    "eslint": ">=6.0.1",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-prettier": "^7.2.0",
+    "eslint-plugin-import": ">=2.18.0",
+    "eslint-plugin-jest": "^24.1.3",
+    "eslint-plugin-prettier": "^3.3.1",
+    "jest": "^26.4.0",
+    "prettier": "^2.1.2",
+    "serverless": "^2.23.0",
+    "serverless-domain-manager": "^5.1.0",
+    "serverless-offline": "^6.8.0"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.846.0",
+    "dynamodb-toolbox": "^0.3.3"
+  }
+}

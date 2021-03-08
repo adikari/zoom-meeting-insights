@@ -1,9 +1,0 @@
-service: meeting-insights-service
-provider:
-  name: ssm
-
-config:
-  path: /${stage}/meeting-insights/config
-
-  defaults:
-    MEETING_INSIGHTS_TABLE_NAME: meeting-insights-${stage}

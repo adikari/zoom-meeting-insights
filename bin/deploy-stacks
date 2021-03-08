@@ -1,0 +1,77 @@
+#!/bin/bash
+
+set -euo pipefail
+
+CURRENT_AWS_ROLE="$(aws sts get-caller-identity)"
+AWS_ACCOUNT_ID=$(echo "$CURRENT_AWS_ROLE" | jq -r '.Account')
+SERVICE_NAME="meeting-insights"
+STAGE=""
+
+usage="USAGE: $(basename "$0") [-s|--stage] <stage>
+
+where:
+    -s | --stage        stage for deployment (required)
+    -h | --help         show this help text"
+
+while [ $# -gt 0 ]; do
+    if [[ $1 =~ "--"* ]]; then
+        case $1 in
+            --help|-h) echo "$usage"; exit; ;;
+            --stage|-s) STAGE=$2;;
+        esac
+    fi
+    shift
+done
+
+if [ -z "$STAGE" ]; then
+  echo "$usage"; exit 1;
+fi
+
+export AWS_ACCOUNT_ID
+export STAGE
+
+if [ -z "$AWS_ACCOUNT_ID" ]; then
+  echo "Could not read determine AWS account id.";
+  exit 1;
+fi
+
+CURRENT_DIR=$(pwd)
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/.. && pwd )"
+
+echo "Moving to $ROOT_DIR"
+
+cd "$ROOT_DIR"
+
+deploy_stack() {
+    local name="$1"
+    shift
+
+    if ! aws cloudformation deploy \
+      --template-file stacks/$name.yml \
+      --stack-name "$SERVICE_NAME-$name-$STAGE" \
+      --no-fail-on-empty-changeset \
+      --capabilities CAPABILITY_NAMED_IAM \
+      --tags "info:service"=meeting-insights "info:env"=$STAGE \
+        "data:confidentiality"=private "data:classification"=internal \
+        "deploy:stack"="$SERVICE_NAME-$name-$STAGE" "deploy:tool"="bash" "deploy:ci"=none \
+      "$@"; then
+        aws cloudformation describe-stack-events \
+            --stack-name "$SERVICE_NAME-$name-$STAGE" \
+            --query 'StackEvents[].[Timestamp,EventId,ResourceStatusReason]' \
+            --output text 2>/dev/null \
+        | grep -i -B999 -m1 'user initiated' \
+        | tac | grep -i fail >&2
+        return 1
+    fi
+}
+
+echo "Deploying stateful stack.."
+deploy_stack stateful --parameter-overrides Stage=$STAGE MeetingInsightTableName="meeting-insights"
+
+cd "$CURRENT_DIR"
+
+unset AWS_ACCOUNT_ID
+unset STAGE
+
+echo "Done."
+

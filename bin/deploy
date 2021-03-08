@@ -45,27 +45,12 @@ cd "$DIR"
 echo "AWS Account ID: $AWS_ACCOUNT_ID"
 echo "Initiating deploy with: ${CURRENT_AWS_ROLE}"
 
-echo "Deploying configuration..."
-yarn oprah run --stage "$STAGE"
-
 echo "Deploying resources..."
-yarn kumo run --stage "$STAGE"
+./bin/deploy-stacks --stage "$STAGE"
 
 echo "Deploying serverless..."
 # use the serverless version installed in the project
 ./node_modules/.bin/sls deploy --stage "$STAGE" --region "$AWS_REGION" --verbose --aws-s3-accelerate
-
-echo "Generating graphql schema..."
-./bin/generate-schema
-
-# Push schema to apollo engine
-ENGINE_API_KEY=$(yarn --silent oprah fetch -k /"$STAGE"/schedule/secret/ENGINE_API_KEY -s "$STAGE")
-yarn apollo service:push --tag="$STAGE" --key="$ENGINE_API_KEY"
-
-echo "Broadcasting changes to sputnik..."
-SPUTNIK_API_KEY=$(yarn --silent oprah fetch -k /"$STAGE"/schedule/secret/SPUTNIK_API_KEY -s "$STAGE")
-export SPUTNIK_API_KEY
-yarn sputnik broadcast
 
 # Clean up
 cd "$CURRENT_DIR"

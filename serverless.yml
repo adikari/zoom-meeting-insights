@@ -1,10 +1,11 @@
-service: schedule
+service: zoom-insights
 frameworkVersion: '>=2.0.0'
 provider:
   name: aws
   runtime: nodejs14.x
   region: us-east-1
-  role: ${cf:meeting-insights-resources-${opt:stage}.LambdaExecutionRole}
+  iam:
+    role: ${cf:meeting-insights-stateful-${opt:stage}.LambdaExecutionRole}
   versionFunctions: false
   apiGateway:
     shouldStartNameWithService: true
@@ -22,7 +23,7 @@ custom:
   customDomain:
     domainName: ${cf:acloudguru-api-gateway-${opt:stage}.InternalDomainName}
     stage: ${opt:stage}
-    basePath: schedule
+    basePath: zoom-insights
     certificateName: '*.acloud.guru'
     createRoute53Record: false
     endpointType: 'regional'
@@ -39,11 +40,12 @@ package:
     - README.md
 
 functions:
-  macroWebhook:
-    handler: src/handlers/macro.handler
+  createMeeting:
+    handler: src/handlers/create-meeting.handler
     events:
       - http:
-          path: graphql
+          path: /meeting
           method: post
+          private: true
     tags:
-      FunctionType: stream_handler
+      FunctionType: webhook
